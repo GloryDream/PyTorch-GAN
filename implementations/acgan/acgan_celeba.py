@@ -31,6 +31,9 @@ parser.add_argument('--n_classes', type=int, default=10, help='number of classes
 parser.add_argument('--img_size', type=int, default=64, help='size of each image dimension')
 parser.add_argument('--channels', type=int, default=1, help='number of image channels')
 parser.add_argument('--sample_interval', type=int, default=400, help='interval between image sampling')
+parser.add_argument('--save_interval', type=int, default=20, help='interval between model saving')
+parser.add_argument('--reload', type=bool, default=False, help='reload or not')
+parser.add_argument('--epoch', type=int, default=-1, help='reload epoch')
 parser.add_argument('--name', type=str, help='the name of the model')
 
 opt = parser.parse_args()
@@ -91,6 +94,7 @@ class Generator(nn.Module):
         img = self.conv_blocks(out)
         return img
 
+
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
@@ -127,6 +131,72 @@ class Discriminator(nn.Module):
         label = self.aux_layer(out)
 
         return validity, label
+
+
+def save_checkpoint(state, filename):
+    """
+    from pytorch/examples
+    """
+    basename = os.path.dirname(filename)
+    if not os.path.exists(basename):
+        os.makedirs(basename)
+    torch.save(state, filename)
+
+
+def save(save_path, net, optimizer, epoch, ckpt_name):
+    resume_file = os.path.join(save_path, ckpt_name)
+    print('==>save', resume_file)
+    save_checkpoint({
+        'state_dict': net.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'epoch': epoch,
+    }, filename=resume_file)
+
+
+def save_model(netG, netD, optimizerG, optimizerD, epoch_flag, current_epoch):
+    if epoch_flag == -1:
+        g_ckpt_name = 'G_checkpoint.pth.tar'
+        d_ckpt_name = 'D_checkpoint.pth.tar'
+    else:
+        g_ckpt_name = 'G_checkpoint_' + str(current_epoch) + '.pth.tar'
+        d_ckpt_name = 'D_checkpoint_' + str(current_epoch) + '.pth.tar'
+    save_path = model_path
+    save(save_path, netG, optimizerG, current_epoch, g_ckpt_name)
+    save(save_path, netD, optimizerD, current_epoch, d_ckpt_name)
+
+
+def reload(netG, netD, optimizerG, optimizerD, epoch):
+    restore_path = model_path
+
+    if epoch == -1:
+        g_ckpt_name = 'G_checkpoint.pth.tar'
+        d_ckpt_name = 'D_checkpoint.pth.tar'
+    else:
+        g_ckpt_name = 'G_checkpoint_' + str(epoch) + '.pth.tar'
+        d_ckpt_name = 'D_checkpoint_' + str(epoch) + '.pth.tar'
+
+    g_resume_file = os.path.join(restore_path, g_ckpt_name)
+    d_resume_file = os.path.join(restore_path, d_ckpt_name)
+
+    if os.path.isfile(g_resume_file) and os.path.isfile(d_resume_file):
+        print("=> loading checkpoint '{}'".format(g_ckpt_name))
+        g_checkpoint = torch.load(g_resume_file)
+        netG.load_state_dict(g_checkpoint['state_dict'])
+        optimizerG.load_state_dict(g_checkpoint['optimizer'])
+
+        print("=> loading checkpoint '{}'".format(d_ckpt_name))
+        d_checkpoint = torch.load(d_resume_file)
+        netD.load_state_dict(d_checkpoint['state_dict'])
+        optimizerD.load_state_dict(d_checkpoint['optimizer'])
+
+        epoch = g_checkpoint['epoch']
+        print("=> loaded checkpoint (epoch {})".format(epoch))
+    else:
+        print("=> no checkpoint found at '{}'".format(g_ckpt_name))
+        exit(0)
+
+    return epoch
+
 
 # Loss functions
 adversarial_loss = torch.nn.BCELoss()
@@ -165,6 +235,12 @@ optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=opt.lr, betas=(opt
 FloatTensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 LongTensor = torch.cuda.LongTensor if cuda else torch.LongTensor
 
+start_epoch = 0
+# reload
+if opt.reload:
+    start_epoch = reload(netG=generator, netD=discriminator, optimizerG=optimizer_G, optimizerD=optimizer_D,
+                         epoch=opt.epoch)
+
 
 def sample_image(n_row, batches_done):
     """Saves a grid of generated digits ranging from 0 to n_classes"""
@@ -192,11 +268,12 @@ def sample_image(n_row, batches_done):
 
     log_image(gen_imgs.data, 'imgs', nrow=n_row, normalize=True)
 
+
 # ----------
 #  Training
 # ----------
 
-for epoch in range(opt.n_epochs):
+for epoch in range(start_epoch, opt.n_epochs):
     for i, (imgs, labels) in enumerate(dataloader):
 
         batch_size = imgs.shape[0]
@@ -263,3 +340,12 @@ for epoch in range(opt.n_epochs):
         batches_done = epoch * len(dataloader) + i
         if batches_done % opt.sample_interval == 0:
             sample_image(n_row=10, batches_done=batches_done)
+
+        # save anyway
+        save_model(netG=generator, netD=discriminator, optimizerG=optimizer_G, optimizerD=optimizer_D, epoch_flag=-1,
+                   current_epoch=epoch)
+
+        # save at milestone
+        if epoch % opt.save_interval == 0:
+            save_model(netG=generator, netD=discriminator, optimizerG=optimizer_G, optimizerD=optimizer_D, epoch_flag=1,
+                       current_epoch=epoch)
