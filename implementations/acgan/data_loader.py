@@ -5,15 +5,20 @@ from PIL import Image
 import torch
 import os
 import random
+try:
+    import cPickle as pickle
+except ImportError:  # python 3.x
+    import pickle
 
 
 class CelebA(data.Dataset):
     """Dataset class for the CelebA dataset."""
 
-    def __init__(self, image_dir, attr_path, selected_attrs, transform, mode):
+    def __init__(self, image_dir, attr_path, id_path, selected_attrs, transform, mode):
         """Initialize and preprocess the CelebA dataset."""
         self.image_dir = image_dir
         self.attr_path = attr_path
+        self.id_path = id_path
         self.selected_attrs = selected_attrs
         self.transform = transform
         self.mode = mode
@@ -21,6 +26,7 @@ class CelebA(data.Dataset):
         self.test_dataset = []
         self.attr2idx = {}
         self.idx2attr = {}
+        self.file2id = {}
         self.preprocess()
 
         if mode == 'train':
@@ -30,6 +36,11 @@ class CelebA(data.Dataset):
 
     def preprocess(self):
         """Preprocess the CelebA attribute file."""
+        id_lines = [id_line.rstrip() for id_line in open(self.id_path, 'r')]
+        for id_line in id_lines:
+            filename, person_id = id_line.split()
+            self.file2id[filename] = person_id
+
         lines = [line.rstrip() for line in open(self.attr_path, 'r')]
         all_attr_names = lines[1].split()
         for i, attr_name in enumerate(all_attr_names):
@@ -47,12 +58,14 @@ class CelebA(data.Dataset):
             label = []
             for attr_name in self.selected_attrs:
                 idx = self.attr2idx[attr_name]
+
+                # convert 1 and -1 to bool
                 label.append(values[idx] == '1')
 
             if (i+1) < 2000:
-                self.test_dataset.append([filename, label])
+                self.test_dataset.append([filename, label, self.file2id[filename]])
             else:
-                self.train_dataset.append([filename, label])
+                self.train_dataset.append([filename, label, self.file2id[filename]])
 
         print('Finished preprocessing the CelebA dataset...')
 
@@ -72,8 +85,8 @@ def get_loader(image_dir, attr_path, selected_attrs, crop_size=178, image_size=1
                batch_size=16, mode='train', num_workers=1):
     """Build and return a data loader."""
     transform = []
-    if mode == 'train':
-        transform.append(T.RandomHorizontalFlip())
+    # if mode == 'train':
+    #     transform.append(T.RandomHorizontalFlip())
     transform.append(T.CenterCrop(crop_size))
     transform.append(T.Resize(image_size))
     transform.append(T.ToTensor())
