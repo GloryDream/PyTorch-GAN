@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 from torch.autograd import Variable
 from tensorboardX import SummaryWriter
+from tqdm import tqdm
 
 import dateutil.tz
 import torch.nn as nn
@@ -274,7 +275,8 @@ def sample_image(n_row, batches_done):
 # ----------
 
 for epoch in range(start_epoch, opt.n_epochs):
-    for i, (imgs, labels) in enumerate(dataloader):
+    print("[Epoch %d/%d]"% (epoch, opt.n_epochs))
+    for i, (imgs, labels) in enumerate(tqdm(dataloader)):
 
         batch_size = imgs.shape[0]
 
@@ -334,9 +336,9 @@ for epoch in range(start_epoch, opt.n_epochs):
         d_loss.backward()
         optimizer_D.step()
 
-        print ("[Epoch %d/%d] [Batch %d/%d] [D loss: %f, acc: %d%%] [G loss: %f]" % (epoch, opt.n_epochs, i, len(dataloader),
-                                                            d_loss.item(), 100 * d_acc,
-                                                            g_loss.item()))
+        # print ("[Epoch %d/%d] [Batch %d/%d] [D loss: %f, acc: %d%%] [G loss: %f]" % (epoch, opt.n_epochs, i, len(dataloader),
+        #                                                     d_loss.item(), 100 * d_acc,
+        #                                                     g_loss.item()))
         batches_done = epoch * len(dataloader) + i
         if batches_done % opt.sample_interval == 0:
             sample_image(n_row=10, batches_done=batches_done)
