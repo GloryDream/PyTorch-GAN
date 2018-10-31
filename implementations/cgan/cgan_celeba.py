@@ -242,7 +242,7 @@ def sample_image(n_row, epoch):
 # ----------
 
 for epoch in range(opt.n_epochs):
-	print("[Epoch %d/%d]" % (epoch, opt.n_epochs))
+    print("[Epoch %d/%d]" % (epoch, opt.n_epochs))
     for i, (imgs, labels) in enumerate(tqdm(dataloader)):
 
         batch_size = imgs.shape[0]
