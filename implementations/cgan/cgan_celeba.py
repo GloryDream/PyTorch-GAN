@@ -1,23 +1,19 @@
 import argparse
-import os
-import numpy as np
-import math
 import datetime
-
-import torchvision.transforms as transforms
-from torchvision.utils import make_grid
-from dataset import CelebaDataset40
-
-from torch.utils.data import DataLoader
-from torch.autograd import Variable
-from tensorboardX import SummaryWriter
-from tqdm import tqdm
+import os
 
 import dateutil.tz
-
-import torch.nn as nn
-import torch.nn.functional as F
+import numpy as np
 import torch
+import torch.nn as nn
+import torchvision.transforms as transforms
+from tensorboardX import SummaryWriter
+from torch.autograd import Variable
+from torch.utils.data import DataLoader
+from torchvision.utils import make_grid
+from tqdm import tqdm
+
+from dataset import CelebaDataset40
 
 os.makedirs('images', exist_ok=True)
 
@@ -234,7 +230,6 @@ def sample_image(n_row, epoch):
                 saves the tensor as a grid of images by calling ``make_grid``.
             **kwargs: Other arguments are documented in ``make_grid``.
         """
-        from PIL import Image
         grid = make_grid(tensor, nrow=nrow, padding=padding, pad_value=pad_value,
                          normalize=normalize, range=range, scale_each=scale_each)
         TB.add_image(filename + '/epoch{}'.format(epoch), grid, epoch)
@@ -247,6 +242,7 @@ def sample_image(n_row, epoch):
 # ----------
 
 for epoch in range(opt.n_epochs):
+	print("[Epoch %d/%d]" % (epoch, opt.n_epochs))
     for i, (imgs, labels) in enumerate(tqdm(dataloader)):
 
         batch_size = imgs.shape[0]
