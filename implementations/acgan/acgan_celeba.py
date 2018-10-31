@@ -55,9 +55,10 @@ logdir_path = os.path.join(output_dir, 'log', timestamp)
 model_path = os.path.join(output_dir, 'model')
 
 # mkdir
-os.makedirs(output_dir)
-os.makedirs(logdir_path)
-os.makedirs(model_path)
+if not opt.reload:
+    os.makedirs(output_dir)
+    os.makedirs(logdir_path)
+    os.makedirs(model_path)
 TB = SummaryWriter(log_dir=logdir_path)
 
 
@@ -356,3 +357,7 @@ for epoch in range(start_epoch, opt.n_epochs):
     if epoch % opt.save_interval == 0:
         save_model(netG=generator, netD=discriminator, optimizerG=optimizer_G, optimizerD=optimizer_D, epoch_flag=1,
                    current_epoch=epoch)
+
+# save the final results
+sample_image(n_row=10, epoch=epoch)
+
