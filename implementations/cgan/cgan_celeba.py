@@ -77,7 +77,7 @@ class Generator(nn.Module):
             return layers
 
         self.model = nn.Sequential(
-            *block(opt.latent_dim+opt.n_classes, 128, normalize=False),
+            *block(opt.latent_dim+opt.id_embed_dim, 128, normalize=False),
             *block(128, 256),
             *block(256, 512),
             *block(512, 1024),
@@ -97,10 +97,10 @@ class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
 
-        self.label_embedding = nn.Embedding(opt.n_classes, opt.n_classes)
+        self.label_emb = nn.Embedding(opt.n_id, opt.id_embed_dim)
 
         self.model = nn.Sequential(
-            nn.Linear(opt.n_classes + int(np.prod(img_shape)), 512),
+            nn.Linear(opt.id_embed_dim + int(np.prod(img_shape)), 512),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(512, 512),
             nn.Dropout(0.4),
@@ -267,7 +267,7 @@ for epoch in range(opt.n_epochs):
 
         # Sample noise and labels as generator input
         z = Variable(FloatTensor(np.random.normal(0, 1, (batch_size, opt.latent_dim))))
-        gen_labels = Variable(LongTensor(np.random.randint(0, opt.n_classes, batch_size)))
+        gen_labels = Variable(LongTensor(np.random.randint(0, opt.id_embed_dim, batch_size)))
 
         # Generate a batch of images
         gen_imgs = generator(z, gen_labels)
