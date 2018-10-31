@@ -33,7 +33,8 @@ parser.add_argument('--latent_dim', type=int, default=48, help='dimensionality o
 parser.add_argument('--n_id', type=int, default=40, help='number of classes for dataset')
 parser.add_argument('--img_size', type=int, default=64, help='size of each image dimension')
 parser.add_argument('--channels', type=int, default=3, help='number of image channels')
-parser.add_argument('--sample_interval', type=int, default=400, help='interval between image sampling')
+# parser.add_argument('--sample_interval', type=int, default=400, help='interval between image sampling')
+parser.add_argument('--log_interval', type=int, default=20, help='interval between image sampling')
 parser.add_argument('--save_interval', type=int, default=20, help='interval between model saving')
 parser.add_argument('--reload', type=bool, default=False, help='reload or not')
 parser.add_argument('--epoch', type=int, default=-1, help='reload epoch')
@@ -248,7 +249,7 @@ if opt.reload:
                          epoch=opt.epoch)
 
 
-def sample_image(n_row, batches_done):
+def sample_image(n_row, epoch):
     """Saves a grid of generated digits ranging from 0 to n_classes"""
     # Sample noise
     z = Variable(FloatTensor(np.random.normal(0, 1, (n_row**2, opt.latent_dim))))
@@ -269,7 +270,7 @@ def sample_image(n_row, batches_done):
         from PIL import Image
         grid = make_grid(tensor, nrow=nrow, padding=padding, pad_value=pad_value,
                          normalize=normalize, range=range, scale_each=scale_each)
-        TB.add_image(filename + '/iters{}'.format(epoch), grid, batches_done)
+        TB.add_image(filename + '/epoch{}'.format(epoch), grid, epoch)
 
     log_image(gen_imgs.data, 'imgs', nrow=n_row, normalize=True)
 
@@ -343,11 +344,11 @@ for epoch in range(start_epoch, opt.n_epochs):
         # print ("[Epoch %d/%d] [Batch %d/%d] [D loss: %f, acc: %d%%] [G loss: %f]" % (epoch, opt.n_epochs, i, len(dataloader),
         #                                                     d_loss.item(), 100 * d_acc,
         #                                                     g_loss.item()))
-        batches_done = epoch * len(dataloader) + i
-        if batches_done % opt.sample_interval == 0:
-            sample_image(n_row=10, batches_done=batches_done)
+        # batches_done = epoch * len(dataloader) + i
+    if epoch % opt.log_interval == 0:
+        sample_image(n_row=10, epoch=epoch)
 
-    # save anyway
+    # save anyway each epoch
     save_model(netG=generator, netD=discriminator, optimizerG=optimizer_G, optimizerD=optimizer_D, epoch_flag=-1,
                current_epoch=epoch)
 
