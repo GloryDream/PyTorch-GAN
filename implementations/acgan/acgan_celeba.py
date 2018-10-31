@@ -68,6 +68,7 @@ def weights_init_normal(m):
         torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
         torch.nn.init.constant_(m.bias.data, 0.0)
 
+
 class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
@@ -268,8 +269,7 @@ def sample_image(n_row, batches_done):
         from PIL import Image
         grid = make_grid(tensor, nrow=nrow, padding=padding, pad_value=pad_value,
                          normalize=normalize, range=range, scale_each=scale_each)
-        ndarr = grid.mul(255).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
-        TB.add_image(filename + '/iters{}'.format(epoch), ndarr, batches_done)
+        TB.add_image(filename + '/iters{}'.format(epoch), grid, batches_done)
 
     log_image(gen_imgs.data, 'imgs', nrow=n_row, normalize=True)
 
@@ -347,11 +347,11 @@ for epoch in range(start_epoch, opt.n_epochs):
         if batches_done % opt.sample_interval == 0:
             sample_image(n_row=10, batches_done=batches_done)
 
-        # save anyway
-        save_model(netG=generator, netD=discriminator, optimizerG=optimizer_G, optimizerD=optimizer_D, epoch_flag=-1,
-                   current_epoch=epoch)
+    # save anyway
+    save_model(netG=generator, netD=discriminator, optimizerG=optimizer_G, optimizerD=optimizer_D, epoch_flag=-1,
+               current_epoch=epoch)
 
-        # save at milestone
-        if epoch % opt.save_interval == 0:
-            save_model(netG=generator, netD=discriminator, optimizerG=optimizer_G, optimizerD=optimizer_D, epoch_flag=1,
-                       current_epoch=epoch)
+    # save at milestone
+    if epoch % opt.save_interval == 0:
+        save_model(netG=generator, netD=discriminator, optimizerG=optimizer_G, optimizerD=optimizer_D, epoch_flag=1,
+                   current_epoch=epoch)
