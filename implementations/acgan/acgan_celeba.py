@@ -6,6 +6,7 @@ import datetime
 
 import torchvision.transforms as transforms
 from torchvision.utils import make_grid
+from dataset import *
 
 from torch.utils.data import DataLoader
 from torchvision import datasets
@@ -218,16 +219,17 @@ generator.apply(weights_init_normal)
 discriminator.apply(weights_init_normal)
 
 # Configure data loader
-os.makedirs('../../data/mnist', exist_ok=True)
-dataloader = torch.utils.data.DataLoader(
-    datasets.MNIST('../../data/mnist', train=True, download=True,
-                   transform=transforms.Compose([
-                        transforms.CenterCrop(160),
-                        transforms.Resize(opt.img_size),
-                        transforms.ToTensor(),
-                        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-                   ])),
-    batch_size=opt.batch_size, shuffle=True)
+# os.makedirs('../../data/mnist', exist_ok=True)
+transform = transforms.Compose([
+    transforms.CenterCrop(160),
+    transforms.Resize(64),
+    transforms.ToTensor()
+    ])
+dataloader = torch.utils.data.DataLoader(CelebaDataset40(opt.data_dir, transform=transform),
+                                         batch_size=opt.batch_size,
+                                         shuffle=True,
+                                         num_workers=4,
+                                         drop_last=True)
 
 # Optimizers
 optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
