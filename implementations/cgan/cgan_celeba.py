@@ -97,7 +97,7 @@ class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
 
-        self.label_emb = nn.Embedding(opt.n_id, opt.id_embed_dim)
+        self.label_embedding = nn.Embedding(opt.n_id, opt.id_embed_dim)
 
         self.model = nn.Sequential(
             nn.Linear(opt.id_embed_dim + int(np.prod(img_shape)), 512),
