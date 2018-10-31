@@ -28,15 +28,17 @@ parser.add_argument('--lr', type=float, default=0.0002, help='adam: learning rat
 parser.add_argument('--b1', type=float, default=0.5, help='adam: decay of first order momentum of gradient')
 parser.add_argument('--b2', type=float, default=0.999, help='adam: decay of first order momentum of gradient')
 parser.add_argument('--n_cpu', type=int, default=8, help='number of cpu threads to use during batch generation')
-parser.add_argument('--latent_dim', type=int, default=100, help='dimensionality of the latent space')
-parser.add_argument('--n_classes', type=int, default=10, help='number of classes for dataset')
+parser.add_argument('--latent_dim', type=int, default=48, help='dimensionality of the latent space')
+# parser.add_argument('--n_classes', type=int, default=10, help='number of classes for dataset')
+parser.add_argument('--n_id', type=int, default=40, help='number of classes for dataset')
 parser.add_argument('--img_size', type=int, default=64, help='size of each image dimension')
-parser.add_argument('--channels', type=int, default=1, help='number of image channels')
+parser.add_argument('--channels', type=int, default=3, help='number of image channels')
 parser.add_argument('--sample_interval', type=int, default=400, help='interval between image sampling')
 parser.add_argument('--save_interval', type=int, default=20, help='interval between model saving')
 parser.add_argument('--reload', type=bool, default=False, help='reload or not')
 parser.add_argument('--epoch', type=int, default=-1, help='reload epoch')
 parser.add_argument('--name', type=str, help='the name of the model')
+parser.add_argument('--data_dir', type=str, help='the path of training data')
 
 opt = parser.parse_args()
 print(opt)
@@ -70,7 +72,7 @@ class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
 
-        self.label_emb = nn.Embedding(opt.n_classes, opt.latent_dim)
+        self.label_emb = nn.Embedding(opt.n_id, opt.latent_dim)
 
         self.init_size = opt.img_size // 4 # Initial size before upsampling
         self.l1 = nn.Sequential(nn.Linear(opt.latent_dim, 128*self.init_size**2))
@@ -123,7 +125,7 @@ class Discriminator(nn.Module):
         # Output layers
         self.adv_layer = nn.Sequential( nn.Linear(128*ds_size**2, 1),
                                         nn.Sigmoid())
-        self.aux_layer = nn.Sequential( nn.Linear(128*ds_size**2, opt.n_classes),
+        self.aux_layer = nn.Sequential( nn.Linear(128*ds_size**2, opt.n_id),
                                         nn.Softmax())
 
     def forward(self, img):
@@ -298,7 +300,7 @@ for epoch in range(start_epoch, opt.n_epochs):
 
         # Sample noise and labels as generator input
         z = Variable(FloatTensor(np.random.normal(0, 1, (batch_size, opt.latent_dim))))
-        gen_labels = Variable(LongTensor(np.random.randint(0, opt.n_classes, batch_size)))
+        gen_labels = Variable(LongTensor(np.random.randint(0, opt.n_id, batch_size)))
 
         # Generate a batch of images
         gen_imgs = generator(z, gen_labels)
