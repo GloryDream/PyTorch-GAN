@@ -38,7 +38,7 @@ parser.add_argument('--save_interval', type=int, default=20, help='interval betw
 parser.add_argument('--reload', type=bool, default=False, help='reload or not')
 parser.add_argument('--epoch', type=int, default=-1, help='reload epoch')
 parser.add_argument('--name', type=str, help='the name of the model')
-parser.add_argument('--data_dir', type=str, help='the path of training data')
+parser.add_argument('--data_dir', type=str, default='CelebA/images', help='the path of training data')
 
 opt = parser.parse_args()
 print(opt)
